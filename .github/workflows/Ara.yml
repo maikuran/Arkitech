@@ -2,6 +2,9 @@ name: Commit
 
 on:
   workflow_dispatch:
+  push:
+    branches: 
+      - unkobriri
 
 permissions:
   contents: write
