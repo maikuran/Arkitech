@@ -24,7 +24,7 @@ public class DokkyoSwordItem extends SwordItem {
             @Override public Ingredient getRepairIngredient() {
                 return Ingredient.ofItems(Items.ROTTEN_FLESH);
             }
-        }, 0, -2.4F + 4.0F, settings.group(ItemGroup.COMBAT)); // 攻撃速度1.6に相当
+        }, 0, -2.4F, settings.group(ItemGroup.COMBAT)); // 攻撃速度1.6に相当
     }
 
     @Override
