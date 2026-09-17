@@ -1,0 +1,15 @@
+Mapping summary
+
+Old: constructsarmory:mail -> New: tconstruct:maille (statless)
+Old: constructsarmory:plate -> New: tconstruct:plating_helmet, tconstruct:plating_chestplate, tconstruct:plating_leggings, tconstruct:plating_boots
+Old: tinkersarchery:bow -> New: tconstruct:limb
+Old: tinkersarchery:arrowhead -> New: tconstruct:arrow_head
+Old: tinkersarchery:arrow_shaft -> New: tconstruct:arrow_shaft
+Old: tinkersarchery:bowguide -> no direct 1.20.1 material stat; omitted
+Old: harvestLevel -> New: harvestTier
+Old Forge BiomeLoadingEvent -> Fabric BiomeModifications.addFeature
+Old Forge Entity Registry -> Fabric BuiltInRegistries.ENTITY_TYPE registration
+Old Forge LivingDeathEvent -> requires server-side kill tracking / modifier hook redesign
+Old IModifierToolStack -> New IToolStackView + ModifierEntry
+Old getEntityDamage -> New MeleeDamageModifierHook.getMeleeDamage
+Old afterEntityHit -> New MeleeHitModifierHook.afterMeleeHit

@@ -1,0 +1,48 @@
+Sakalti 1.01 -> Hephaestus 1.20.1 / 3.6.4.305
+
+This revision is a second-pass cleanup of the source port.
+
+Removed completely:
+- Crimson Fly entity and every source/resource reference to it.
+- Construct's Armory dependencies and stat IDs.
+- Tinkers' Archery-only material stat IDs.
+- Forge event/registry APIs.
+- The old external Kanis Delight scriptevent/function payload.
+- Forge fluid blockstate references.
+- Sakalti fluid-processing recipes that require custom Fluid registry entries not present in this port.
+
+Material data:
+- data/sakalti/tinkering/materials/definition/
+- data/sakalti/tinkering/materials/stats/
+- data/sakalti/tinkering/materials/traits/
+- Hephaestus 1.20.1 stat IDs are used.
+- Armor-compatible skull stats are retained where the exact old Construct's Armory plating stat has no equivalent in this Hephaestus build.
+- Archery-only stats are omitted when the target stat type does not exist.
+
+Modifiers:
+- All Sakalti modifier classes from the port are retained and mapped to the Hephaestus Modifier API.
+- Itsulic Nihilism uses ModDataNBT and Fabric AFTER_KILLED_OTHER_ENTITY.
+- The callback now uses official 1.20.1 ServerLevel naming.
+
+Worldgen:
+- 11 placed features remain.
+- Original Sakalti ore sizes/counts/Y ranges were checked against the uploaded 1.16.5 bytecode where available.
+- Nether, End, and Overworld biome selectors are used instead of Forge BiomeLoadingEvent.
+
+Content registration:
+- Required Sakalti block/item IDs are registered on Fabric.
+- Existing Sakalti models, textures, translations, and material resources are retained.
+- The former Itsulite Forge fluid blockstate was replaced with a safe ordinary blockstate because no Fabric FluidObject is registered for it.
+
+Second-pass validation:
+- JSON parse scan: PASS.
+- Active blockstates containing forge:fluid: none.
+- Crimson Fly references in source/resources: none.
+- Construct's Armory references in source/resources: none.
+- Tinkers' Archery references in source/resources: none.
+- Forge API imports in Sakalti Java sources: none.
+- Old net.minecraft.server.world names: none.
+
+Known limitation:
+- A final Loom/Minecraft compile cannot be honestly claimed in this runtime because a complete Gradle/Loom dependency cache is unavailable. The package is therefore a cleaned source/resource port, not falsely labelled as a verified binary JAR.
+- Custom Sakalti molten-fluid recipes are intentionally withheld rather than leaving unresolved Fluid IDs that could fail recipe reloads. Reintroducing them requires real 1.20.1 Fabric Fluid registration and FluidObject setup.
