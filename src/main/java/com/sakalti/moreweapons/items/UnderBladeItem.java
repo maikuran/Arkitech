@@ -46,7 +46,7 @@ public class UnderBladeItem extends SwordItem {
             }
         }, 
         0,        // 攻撃力ボーナス：0（ToolMaterialの値そのまま使う）
-        2.0F,     // 攻撃速度補正：やや速め
+        -2.0F,     // 攻撃速度補正：やや速め
         settings); // アイテム設定
     }
 
