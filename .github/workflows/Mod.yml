@@ -3,7 +3,7 @@ name: Build and Upload Mod
 on:
   push:
     branches:
-      - main  # mainブランチにpushされた時に実行
+      - unkobriri  # mainブランチにpushされた時に実行
 
 jobs:
   build:
@@ -30,6 +30,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: build/libs/*.jar  # JARファイルをアップロード
-          tag_name: origin
+          tag_name: origin2
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}  # GitHub SecretsのTOKENを使用
