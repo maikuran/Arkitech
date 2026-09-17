@@ -11,10 +11,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class EntityMixin {
 
     @Shadow
-    private int timeUntilRegen;
+    protected int timeUntilRegen;
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void removeInvulnerability(CallbackInfo ci) {
-        this.timeUntilRegen = 0;
+        if ((Object) this instanceof net.minecraft.entity.LivingEntity) {
+            this.timeUntilRegen = 0;
+        }
     }
 }
