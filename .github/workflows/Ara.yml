@@ -28,42 +28,63 @@ jobs:
         run: |
           set -euo pipefail
 
-          ZIP="$(find . -maxdepth 1 -type f -name '*.zip' -print -quit)"
+          ZIP="$(find "$GITHUB_WORKSPACE" -maxdepth 1 -type f -name '*.zip' -print -quit)"
 
           if [ -z "$ZIP" ]; then
             echo "ZIP file not found."
             exit 1
           fi
 
-          mkdir -p extracted
-          unzip -oq "$ZIP" -d extracted
+          rm -rf "$GITHUB_WORKSPACE/extracted"
+          mkdir -p "$GITHUB_WORKSPACE/extracted"
+
+          unzip -oq "$ZIP" -d "$GITHUB_WORKSPACE/extracted"
 
           shopt -s dotglob nullglob
-          items=(extracted/*)
+
+          items=("$GITHUB_WORKSPACE"/extracted/*)
 
           if [ "${#items[@]}" -eq 1 ] && [ -d "${items[0]}" ]; then
-            cp -a "${items[0]}"/. ./
+            cp -a "${items[0]}"/. "$GITHUB_WORKSPACE"/
           else
-            cp -a extracted/. ./
+            cp -a "$GITHUB_WORKSPACE"/extracted/. "$GITHUB_WORKSPACE"/
           fi
 
-          rm -rf extracted
+          rm -rf "$GITHUB_WORKSPACE/extracted"
           rm -f "$ZIP"
 
-      - name: Commit src and lib only
+      - name: Commit extracted project files
         shell: bash
         run: |
           set -euo pipefail
 
+          cd "$GITHUB_WORKSPACE"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add -A -- src lib
+          # Actions環境に実際に存在するファイルを確認
+          echo "Workspace:"
+          ls -la
 
+          # ZIP展開後に存在する src / lib を個別に追加
+          if [ -d "$GITHUB_WORKSPACE/src" ]; then
+            git add -- "$GITHUB_WORKSPACE/src"
+          fi
+
+          if [ -d "$GITHUB_WORKSPACE/lib" ]; then
+            git add -- "$GITHUB_WORKSPACE/lib"
+          fi
+
+          # どちらも存在しない場合
           if git diff --cached --quiet; then
-            echo "No changes in src or lib."
+            echo "No changes found in src or lib."
             exit 0
           fi
 
+          echo "Files to commit:"
+          git diff --cached --name-status
+
           git commit -m "Import Sakalti Hephaestus 1.20.1 project"
+
           git push origin HEAD:unkobriri
