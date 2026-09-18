@@ -8,14 +8,10 @@ on:
 
 permissions:
   contents: write
-  workflows: write
 
 jobs:
   commit:
     runs-on: ubuntu-latest
-
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout
@@ -39,11 +35,12 @@ jobs:
           unzip -o "$ZIP_FILE" -d .extract
 
           rm -rf .extract/.git
+          rm -rf .extract/.github
 
           cp -a .extract/. .
           rm -rf .extract
 
-      - name: Commit
+      - name: Commit changes
         shell: bash
         run: |
           set -e
