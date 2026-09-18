@@ -1,10 +1,10 @@
 name: Commit
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - unkobriri
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,16 +13,22 @@ jobs:
   commit:
     runs-on: ubuntu-latest
 
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Extract ZIP
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
-          ZIP=$(find . -maxdepth 1 -type f -name '*.zip' | head -n 1)
+          ZIP="$(find . -maxdepth 1 -type f -name '*.zip' -print -quit)"
 
           if [ -z "$ZIP" ]; then
             echo "ZIP file not found."
@@ -30,7 +36,7 @@ jobs:
           fi
 
           mkdir -p extracted
-          unzip -o "$ZIP" -d extracted
+          unzip -oq "$ZIP" -d extracted
 
           shopt -s dotglob nullglob
           items=(extracted/*)
@@ -47,7 +53,7 @@ jobs:
       - name: Commit
         shell: bash
         run: |
-          set -e
+          set -euo pipefail
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
