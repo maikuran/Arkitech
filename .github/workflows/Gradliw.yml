@@ -2,7 +2,7 @@ name: Add Gradle Wrapper (main branch)
 
 on:
   push:
-    branches: main
+    branches: unkobriri
   workflow_dispatch:
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: unkobriri
 
       - name: Set up JDK
         uses: actions/setup-java@v4
