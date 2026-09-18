@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  workflows: write
 
 jobs:
   commit:
@@ -37,9 +38,7 @@ jobs:
 
           unzip -o "$ZIP_FILE" -d .extract
 
-          if [ -d ".extract/.git" ]; then
-            rm -rf ".extract/.git"
-          fi
+          rm -rf .extract/.git
 
           cp -a .extract/. .
           rm -rf .extract
