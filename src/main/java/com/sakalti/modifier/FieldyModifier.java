@@ -1,3 +1,0 @@
-package com.sakalti.modifier;
-import net.minecraft.world.effect.*; import net.minecraft.world.entity.LivingEntity; import slimeknights.tconstruct.library.modifiers.Modifier; import slimeknights.tconstruct.library.tools.context.ToolAttackContext; import slimeknights.tconstruct.library.tools.nbt.IToolStackView;
-public class FieldyModifier extends Modifier { @Override public int afterEntityHit(IToolStackView tool,int level,ToolAttackContext ctx,float damage){LivingEntity a=ctx.getAttacker();if(a!=null&&!a.level().isClientSide){a.addEffect(new MobEffectInstance(MobEffects.GLOWING,20,4));a.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE,20,4));}return 0;}}
