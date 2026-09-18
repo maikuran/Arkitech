@@ -60,5 +60,5 @@ jobs:
           fi
 
           git commit -m "Import Sakalti Hephaestus 1.20.1 project"
-          git pull
+          git pull --rebase
           git push
