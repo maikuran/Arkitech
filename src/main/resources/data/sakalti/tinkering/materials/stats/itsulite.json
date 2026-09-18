@@ -1,0 +1,26 @@
+{
+  "stats": {
+    "tconstruct:handle": {
+      "durability": 1.375,
+      "attackDamage": 1.28,
+      "attackSpeed": 1.28,
+      "miningSpeed": 1.28
+    },
+    "tconstruct:head": {
+      "durability": 1000,
+      "attack": 5.0,
+      "miningSpeed": 9.4,
+      "harvestTier": "minecraft:netherite"
+    },
+    "tconstruct:extra": {},
+    "tconstruct:limb": {
+      "durability": 1000,
+      "drawSpeed": 1.28,
+      "velocity": 0.375
+    },
+    "tconstruct:skull": {
+      "durability": 652,
+      "armor": 17
+    }
+  }
+}

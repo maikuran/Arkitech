@@ -1,0 +1,12 @@
+{
+  "type": "tconstruct:melting",
+  "ingredient": {
+    "item": "sakalti:tiberium_ore"
+  },
+  "result": {
+    "fluid": "sakalti:tiberium",
+    "amount": 120
+  },
+  "temperature": 1000,
+  "time": 120
+}

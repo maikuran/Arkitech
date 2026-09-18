@@ -1,0 +1,3 @@
+package com.sakalti.modifier;
+import net.minecraft.world.effect.*; import net.minecraft.world.entity.LivingEntity; import slimeknights.tconstruct.library.modifiers.Modifier; import slimeknights.tconstruct.library.tools.context.ToolAttackContext; import slimeknights.tconstruct.library.tools.nbt.IToolStackView;
+public class SeirenCurseModifier extends Modifier { @Override public int afterEntityHit(IToolStackView tool,int level,ToolAttackContext ctx,float damage){LivingEntity t=ctx.getLivingTarget();if(t!=null&&!t.level().isClientSide){t.addEffect(new MobEffectInstance(MobEffects.WEAKNESS,200,2));t.addEffect(new MobEffectInstance(MobEffects.CONFUSION,120,5));}return 0;}}
