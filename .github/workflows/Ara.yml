@@ -26,68 +26,38 @@ jobs:
       - name: Extract ZIP
         shell: bash
         run: |
-          set -euo pipefail
+          set -e
 
-          cd "$GITHUB_WORKSPACE"
+          ZIP_FILE="Sakalti-Hephaestus-1.20.1-all-recipes-build.zip"
 
-          ZIP="$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)"
+          test -f "$ZIP_FILE"
 
-          if [ -z "$ZIP" ]; then
-            echo "ZIP file not found."
-            exit 1
+          rm -rf .extract
+          mkdir -p .extract
+
+          unzip -o "$ZIP_FILE" -d .extract
+
+          if [ -d ".extract/.git" ]; then
+            rm -rf ".extract/.git"
           fi
 
-          echo "ZIP: $ZIP"
-
-          rm -rf extracted
-          mkdir -p extracted
-
-          unzip -oq "$ZIP" -d extracted
-
-          echo "Extracted files:"
-          find extracted -type f -print
-
-          # ZIPの中にプロジェクトフォルダが1つだけある場合、その中身をルートへ展開
-          shopt -s dotglob nullglob
-          items=(extracted/*)
-
-          if [ "${#items[@]}" -eq 1 ] && [ -d "${items[0]}" ]; then
-            cp -a "${items[0]}"/. ./
-          else
-            cp -a extracted/. ./
-          fi
-
-          rm -rf extracted
-          rm -f "$ZIP"
-
-          echo "Workspace after extraction:"
-          find . -maxdepth 3 -type f -print
+          cp -a .extract/. .
+          rm -rf .extract
 
       - name: Commit
         shell: bash
         run: |
-          set -euo pipefail
-
-          cd "$GITHUB_WORKSPACE"
+          set -e
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # ワークスペース内の変更を全部ステージ
           git add -A
-
-          # ZIPやActions自身の変更をコミット対象から除外
-          git reset -- '*.zip' 2>/dev/null || true
-          git reset -- '.github/workflows/*' 2>/dev/null || true
-
-          echo "=== Staged files ==="
-          git diff --cached --name-status
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
           fi
 
-          git commit -m "Import Sakalti Hephaestus 1.20.1 project"
-
+          git commit -m "Extract Sakalti Hephaestus 1.20.1"
           git push origin HEAD:unkobriri
