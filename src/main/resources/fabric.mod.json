@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "sakalti",
-  "version": "${version}",
+  "version": "1.0.1-hephaestus",
   "name": "Sakalti for Hephaestus",
   "description": "Sakalti 1.16.5 Forge content ported toward Hephaestus 1.20.1 Fabric.",
   "authors": [
