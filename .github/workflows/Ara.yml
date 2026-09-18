@@ -1,10 +1,10 @@
 name: Commit
 
 on:
-  workflow_dispatch:
   push:
-    branches: 
+    branches:
       - unkobriri
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,7 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract uploaded project
+      - name: Extract ZIP
         shell: bash
         run: |
           set -e
@@ -44,7 +44,7 @@ jobs:
           rm -rf extracted
           rm -f "$ZIP"
 
-      - name: Commit changes
+      - name: Commit
         shell: bash
         run: |
           set -e
@@ -60,5 +60,4 @@ jobs:
           fi
 
           git commit -m "Import Sakalti Hephaestus 1.20.1 project"
-          git pull --rebase
-          git push
+          git push origin HEAD:unkobriri
