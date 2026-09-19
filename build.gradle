@@ -8,7 +8,9 @@ group = 'com.sakalti'
 def minecraftVersion = '1.20.1'
 def fabricLoaderVersion = '0.17.2'
 def fabricApiVersion = '0.92.6+1.20.1'
-def hephaestusCoordinate = 'curse.maven:hephaestus-fabric-667894:7223152'
+def hephaestusProjectId = '667894'
+def hephaestusFileId = '7223152'
+def hephaestusCoordinate = "curse.maven:hephaestus-fabric-${hephaestusProjectId}:${hephaestusFileId}"
 def extractedMantleJar = layout.buildDirectory.file('embedded-libs/Mantle-1.20.1-1.9.291.jar')
 
 repositories {
