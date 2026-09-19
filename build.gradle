@@ -13,24 +13,59 @@ repositories {
     mavenCentral()
 }
 
+def hephaestusDependency = 'curse.maven:hephaestus-fabric-667894:7223152'
+def nestedMantleJar = layout.buildDirectory.file('embedded-libs/Mantle-1.20.1-1.9.291.jar')
+
+configurations {
+    hephaestusBundle
+}
+
 dependencies {
     minecraft 'com.mojang:minecraft:1.20.1'
     mappings loom.officialMojangMappings()
 
     modImplementation 'net.fabricmc:fabric-loader:0.17.2'
     modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.6+1.20.1'
-    modImplementation 'curse.maven:hephaestus-fabric-667894:7223152'
+    modImplementation hephaestusDependency
+
+    hephaestusBundle hephaestusDependency
+    compileOnly files(nestedMantleJar)
 
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.2'
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.2'
+}
+
+tasks.register('extractEmbeddedMantle', Copy) {
+    dependsOn configurations.hephaestusBundle
+
+    from {
+        configurations.hephaestusBundle.resolve().collect { jar ->
+            zipTree(jar).matching {
+                include 'META-INF/jars/Mantle-*.jar'
+            }
+        }
+    }
+
+    into layout.buildDirectory.dir('embedded-libs')
+    include 'META-INF/jars/Mantle-*.jar'
+    eachFile { fileCopyDetails ->
+        fileCopyDetails.name = fileCopyDetails.name.replace('Mantle', 'Mantle')
+    }
+    rename { String fileName ->
+        'Mantle-1.20.1-1.9.291.jar'
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    dependsOn tasks.named('extractEmbeddedMantle')
+    classpath += files(nestedMantleJar)
+    options.release = 17
 }
 
 processResources {
     inputs.property 'version', project.version
     filesMatching('fabric.mod.json') { expand 'version': project.version }
 }
-
-tasks.withType(JavaCompile).configureEach { options.release = 17 }
 
 java { withSourcesJar() }
 
