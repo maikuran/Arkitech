@@ -3,7 +3,7 @@ name: Fix Mojmap Modifier Errors
 on:
   push:
     branches:
-      - unkobriri
+      - unkobrir
   workflow_dispatch:
 
 permissions:
