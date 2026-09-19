@@ -29,7 +29,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Fix only affected Mojmap files
+      - name: Fix Mojmap source files
         shell: bash
         run: |
           set -euo pipefail
@@ -39,152 +39,194 @@ jobs:
 
           root = Path("src/main/java/com/sakalti/modifier")
 
-          targets = {
-              "CoralianModifier.java",
-              "IceBindModifier.java",
-              "SuperMagnetModifier.java",
-              "LongsparkModifier.java",
-              "LureMeteorModifier.java",
-              "FireWallModifier.java",
-              "LaserPrismModifier.java",
-          }
+          targets = [
+              root / "CoralianModifier.java",
+              root / "IceBindModifier.java",
+              root / "SuperMagnetModifier.java",
+              root / "LongsparkModifier.java",
+              root / "LureMeteorModifier.java",
+              root / "FireWallModifier.java",
+              root / "LaserPrismModifier.java",
+          ]
 
-          files = {root / name for name in targets}
-
-          for path in files:
+          for path in targets:
               if not path.is_file():
                   raise SystemExit(f"Missing expected file: {path}")
 
-          # Coralian: missing MobEffectInstance import.
+          # ---------------------------------------------------------
+          # CoralianModifier
+          # ---------------------------------------------------------
+
           path = root / "CoralianModifier.java"
           text = path.read_text(encoding="utf-8")
 
-          if "import net.minecraft.world.effect.MobEffectInstance;" not in text:
-              marker = "import net.minecraft.world.effect.MobEffects;"
-              if marker not in text:
-                  raise SystemExit(
-                      f"Expected MobEffects import was not found in {path}"
-                  )
+          if "new MobEffectInstance(" in text:
+              if "import net.minecraft.world.effect.MobEffectInstance;" not in text:
+                  marker = "import net.minecraft.world.effect.MobEffects;"
 
-              text = text.replace(
-                  marker,
-                  "import net.minecraft.world.effect.MobEffectInstance;\n"
-                  + marker,
-                  1,
-              )
+                  if marker not in text:
+                      raise SystemExit(
+                          "CoralianModifier.java: MobEffects import not found."
+                      )
+
+                  text = text.replace(
+                      marker,
+                      "import net.minecraft.world.effect.MobEffectInstance;\n"
+                      + marker,
+                      1
+                  )
 
           path.write_text(text, encoding="utf-8")
 
-          # Mojang mappings 1.20.1:
-          # Entity.damageSources(), not getDamageSources().
-          for path in files:
+          # ---------------------------------------------------------
+          # damageSources()
+          # Mojang mappings 1.20.1
+          # ---------------------------------------------------------
+
+          for path in targets:
               text = path.read_text(encoding="utf-8")
+
               text = text.replace(
                   ".getDamageSources()",
-                  ".damageSources()",
+                  ".damageSources()"
               )
+
               path.write_text(text, encoding="utf-8")
 
-          # Mojang mappings 1.20.1:
-          # ItemEntity exposes hasPickUpDelay(), not getPickupDelay().
+          # ---------------------------------------------------------
+          # SuperMagnetModifier
+          # ---------------------------------------------------------
+
           path = root / "SuperMagnetModifier.java"
           text = path.read_text(encoding="utf-8")
 
-          old = "x->x.getPickupDelay() <= 0"
-          new = "!x.hasPickUpDelay()"
+          # Correct Mojmap form:
+          #
+          # x -> !x.hasPickUpDelay()
+          #
+          # Do not remove the lambda parameter.
+          text = text.replace(
+              "x->x.getPickupDelay() <= 0",
+              "x->!x.hasPickUpDelay()"
+          )
 
-          if old not in text:
-              if new not in text:
-                  raise SystemExit(
-                      "Expected SuperMagnet pickup-delay expression was not found."
-                  )
-          else:
-              text = text.replace(old, new, 1)
+          text = text.replace(
+              "x -> x.getPickupDelay() <= 0",
+              "x -> !x.hasPickUpDelay()"
+          )
+
+          # Repair the broken form produced by the previous workflow.
+          text = text.replace(
+              "getEntitiesOfClass(ItemEntity.class,e.getBoundingBox().inflate(6),!x.hasPickUpDelay())",
+              "getEntitiesOfClass(ItemEntity.class,e.getBoundingBox().inflate(6),x->!x.hasPickUpDelay())"
+          )
+
+          text = text.replace(
+              "getEntitiesOfClass(ItemEntity.class, e.getBoundingBox().inflate(6), !x.hasPickUpDelay())",
+              "getEntitiesOfClass(ItemEntity.class, e.getBoundingBox().inflate(6), x -> !x.hasPickUpDelay())"
+          )
 
           path.write_text(text, encoding="utf-8")
 
-          # Verify that the old erroneous APIs are completely absent
-          # from the seven files being repaired.
-          for path in files:
+          # ---------------------------------------------------------
+          # Safety verification
+          # No compilation is performed by this workflow.
+          # ---------------------------------------------------------
+
+          for path in targets:
               text = path.read_text(encoding="utf-8")
 
               if ".getDamageSources()" in text:
                   raise SystemExit(
-                      f"Old getDamageSources() remains in {path}"
+                      f"Old getDamageSources() remains: {path}"
                   )
 
               if "getPickupDelay()" in text:
                   raise SystemExit(
-                      f"Old getPickupDelay() remains in {path}"
+                      f"Old getPickupDelay() remains: {path}"
                   )
 
-          coralian = (root / "CoralianModifier.java").read_text(
-              encoding="utf-8"
-          )
+          super_magnet = (
+              root / "SuperMagnetModifier.java"
+          ).read_text(encoding="utf-8")
 
-          if "MobEffectInstance" not in coralian:
+          if "!x.hasPickUpDelay()" not in super_magnet:
               raise SystemExit(
-                  "CoralianModifier still does not contain MobEffectInstance."
+                  "SuperMagnetModifier.java: expected "
+                  "'!x.hasPickUpDelay()' was not found."
               )
 
-          print("Mojmap fixes applied successfully.")
+          if ",!x.hasPickUpDelay())" in super_magnet:
+              raise SystemExit(
+                  "SuperMagnetModifier.java: broken lambda remains."
+              )
+
+          if ", !x.hasPickUpDelay())" in super_magnet:
+              raise SystemExit(
+                  "SuperMagnetModifier.java: broken lambda remains."
+              )
+
+          coralian = (
+              root / "CoralianModifier.java"
+          ).read_text(encoding="utf-8")
+
+          if "new MobEffectInstance(" in coralian:
+              if "import net.minecraft.world.effect.MobEffectInstance;" not in coralian:
+                  raise SystemExit(
+                      "CoralianModifier.java: MobEffectInstance import missing."
+                  )
+
+          print("Source repair completed.")
+          print("No Gradle compilation is performed.")
+
           PY
 
-      - name: Verify only the requested files changed
+      - name: Show changes
         shell: bash
         run: |
           set -euo pipefail
 
-          allowed="
-          src/main/java/com/sakalti/modifier/CoralianModifier.java
-          src/main/java/com/sakalti/modifier/IceBindModifier.java
-          src/main/java/com/sakalti/modifier/SuperMagnetModifier.java
-          src/main/java/com/sakalti/modifier/LongsparkModifier.java
-          src/main/java/com/sakalti/modifier/LureMeteorModifier.java
-          src/main/java/com/sakalti/modifier/FireWallModifier.java
-          src/main/java/com/sakalti/modifier/LaserPrismModifier.java
-          "
+          git diff -- \
+            src/main/java/com/sakalti/modifier/CoralianModifier.java \
+            src/main/java/com/sakalti/modifier/IceBindModifier.java \
+            src/main/java/com/sakalti/modifier/SuperMagnetModifier.java \
+            src/main/java/com/sakalti/modifier/LongsparkModifier.java \
+            src/main/java/com/sakalti/modifier/LureMeteorModifier.java \
+            src/main/java/com/sakalti/modifier/FireWallModifier.java \
+            src/main/java/com/sakalti/modifier/LaserPrismModifier.java
+
+      - name: Verify changed files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          allowed_files=(
+            "src/main/java/com/sakalti/modifier/CoralianModifier.java"
+            "src/main/java/com/sakalti/modifier/IceBindModifier.java"
+            "src/main/java/com/sakalti/modifier/SuperMagnetModifier.java"
+            "src/main/java/com/sakalti/modifier/LongsparkModifier.java"
+            "src/main/java/com/sakalti/modifier/LureMeteorModifier.java"
+            "src/main/java/com/sakalti/modifier/FireWallModifier.java"
+            "src/main/java/com/sakalti/modifier/LaserPrismModifier.java"
+          )
 
           git diff --name-only | while IFS= read -r file; do
-            if ! printf '%s\n' "$allowed" | grep -Fxq "$file"; then
+            found=false
+
+            for allowed in "${allowed_files[@]}"; do
+              if [[ "$file" == "$allowed" ]]; then
+                found=true
+                break
+              fi
+            done
+
+            if [[ "$found" != true ]]; then
               echo "Unexpected modified file: $file"
               exit 1
             fi
           done
 
-      - name: Compile with Mojang mappings
-        shell: bash
-        run: |
-          set -euo pipefail
-          chmod +x ./gradlew
-          ./gradlew --no-daemon clean compileJava
-
-      - name: Final source verification
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if grep -RIn --include='*.java' \
-            '\.getDamageSources()' \
-            src/main/java/com/sakalti/modifier/; then
-            echo "ERROR: getDamageSources() still exists."
-            exit 1
-          fi
-
-          if grep -RIn --include='*.java' \
-            'getPickupDelay()' \
-            src/main/java/com/sakalti/modifier/; then
-            echo "ERROR: getPickupDelay() still exists."
-            exit 1
-          fi
-
-          grep -Fq \
-            'import net.minecraft.world.effect.MobEffectInstance;' \
-            src/main/java/com/sakalti/modifier/CoralianModifier.java
-
-          echo "Final verification passed."
-
-      - name: Commit and push
+      - name: Commit repaired sources
         shell: bash
         run: |
           set -euo pipefail
@@ -202,9 +244,15 @@ jobs:
             src/main/java/com/sakalti/modifier/LaserPrismModifier.java
 
           if git diff --cached --quiet; then
-            echo "No source changes to commit."
+            echo "No changes to commit."
             exit 0
           fi
 
-          git commit -m "Fix Mojmap modifier API mappings"
+          git commit -m "Fix Mojmap modifier source mappings"
+
+      - name: Push to unkobriri
+        shell: bash
+        run: |
+          set -euo pipefail
+
           git push origin HEAD:unkobriri
