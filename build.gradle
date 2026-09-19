@@ -13,17 +13,22 @@ repositories {
 }
 
 def hephaestusJar = file('libs/Hephaestus-1.20.1-3.6.4.305.jar')
+def mantleJar = file('libs/Mantle-0.10.2+1.20.1-fabric.jar')
 
 if (!hephaestusJar.exists()) {
     throw new GradleException("Missing ${hephaestusJar}; the Hephaestus jar must be present in libs/")
+}
+if (!mantleJar.exists()) {
+    throw new GradleException("Missing ${mantleJar}; download Mantle Fabric before running Gradle")
 }
 
 dependencies {
     minecraft 'com.mojang:minecraft:1.20.1'
     mappings loom.officialMojangMappings()
     modImplementation 'net.fabricmc:fabric-loader:0.17.2'
-    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.6+1.20.1'
+    modImplementation 'net.fabricmc:fabric-api:fabric-api:0.92.6+1.20.1'
     modImplementation files(hephaestusJar)
+    modImplementation files(mantleJar)
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.2'
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.2'
 }
