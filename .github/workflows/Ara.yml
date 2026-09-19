@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - unkobrire
+      - unkobriri
 
 permissions:
   contents: write
