@@ -14,11 +14,8 @@ repositories {
 }
 
 def hephaestusDependency = 'curse.maven:hephaestus-fabric-667894:7223152'
+def hephaestusBundle = configurations.detachedConfiguration(dependencies.create(hephaestusDependency))
 def nestedMantleJar = layout.buildDirectory.file('embedded-libs/Mantle-1.20.1-1.9.291.jar')
-
-configurations {
-    hephaestusBundle
-}
 
 dependencies {
     minecraft 'com.mojang:minecraft:1.20.1'
@@ -27,32 +24,38 @@ dependencies {
     modImplementation 'net.fabricmc:fabric-loader:0.17.2'
     modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.6+1.20.1'
     modImplementation hephaestusDependency
-
-    hephaestusBundle hephaestusDependency
     compileOnly files(nestedMantleJar)
 
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.2'
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.2'
 }
 
-tasks.register('extractEmbeddedMantle', Copy) {
-    dependsOn configurations.hephaestusBundle
+tasks.register('extractEmbeddedMantle') {
+    inputs.files(hephaestusBundle)
+    outputs.file(nestedMantleJar)
 
-    from {
-        configurations.hephaestusBundle.resolve().collect { jar ->
-            zipTree(jar).matching {
-                include 'META-INF/jars/Mantle-*.jar'
-            }
+    doLast {
+        def jarFile = hephaestusBundle.singleFile
+        if (jarFile == null || !jarFile.exists()) {
+            throw new GradleException("Hephaestus dependency was not resolved: ${hephaestusDependency}")
         }
-    }
 
-    into layout.buildDirectory.dir('embedded-libs')
-    include 'META-INF/jars/Mantle-*.jar'
-    eachFile { fileCopyDetails ->
-        fileCopyDetails.name = fileCopyDetails.name.replace('Mantle', 'Mantle')
-    }
-    rename { String fileName ->
-        'Mantle-1.20.1-1.9.291.jar'
+        def outputFile = nestedMantleJar.get().asFile
+        outputFile.parentFile.mkdirs()
+
+        def zip = new java.util.zip.ZipFile(jarFile)
+        try {
+            def entry = zip.entries().find { it.name.startsWith('META-INF/jars/Mantle-') && it.name.endsWith('.jar') }
+            if (entry == null) {
+                throw new GradleException('Hephaestus jar does not contain a Mantle jar under META-INF/jars/')
+            }
+
+            outputFile.withOutputStream { out ->
+                zip.getInputStream(entry).transferTo(out)
+            }
+        } finally {
+            zip.close()
+        }
     }
 }
 
