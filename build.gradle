@@ -8,15 +8,12 @@ group = 'com.sakalti'
 def minecraftVersion = '1.20.1'
 def fabricLoaderVersion = '0.17.2'
 def fabricApiVersion = '0.92.6+1.20.1'
-def hephaestusProjectId = '667894'
-def hephaestusFileId = '7223152'
-def hephaestusCoordinate = "curse.maven:hephaestus-fabric-${hephaestusProjectId}:${hephaestusFileId}"
 
 repositories {
     maven { url = 'https://maven.fabricmc.net/' }
     maven { url = 'https://libraries.minecraft.net/' }
     maven { url = 'https://maven.ladysnake.org/releases' }
-    maven { url = 'https://www.cursemaven.com' }
+    maven { url = 'https://cursemaven.com' }
     maven { url = 'https://api.modrinth.com/maven' }
     mavenCentral()
     gradlePluginPortal()
@@ -28,7 +25,7 @@ dependencies {
 
     modImplementation "net.fabricmc:fabric-loader:${fabricLoaderVersion}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}"
-    modImplementation hephaestusCoordinate
+    modImplementation "curse.maven:hephaestus-fabric-667894:7223152"
 
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.2'
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.2'
