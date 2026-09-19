@@ -15,10 +15,8 @@ repositories {
     mavenCentral()
 }
 
-def hephaestusDependency = 'curse.maven:hephaestus-fabric-667894:7223152'
-def nestedMantleJar = layout.buildDirectory.file('embedded-libs/Mantle-1.20.1-1.9.291.jar')
-
-def hephaestusBundle = configurations.detachedConfiguration(dependencies.create(hephaestusDependency))
+def hephaestusCoordinate = 'curse.maven:hephaestus-fabric-667894:7223152'
+def extractedMantleJar = layout.buildDirectory.file('embedded-libs/Mantle-1.20.1-1.9.291.jar')
 
 dependencies {
     minecraft 'com.mojang:minecraft:1.20.1'
@@ -26,24 +24,23 @@ dependencies {
 
     modImplementation 'net.fabricmc:fabric-loader:0.17.2'
     modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.6+1.20.1'
-    modImplementation hephaestusDependency
-    compileOnly files(nestedMantleJar)
+    modImplementation hephaestusCoordinate
+    compileOnly files(extractedMantleJar)
 
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.2'
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.2'
 }
 
 tasks.register('extractEmbeddedMantle') {
-    inputs.files(hephaestusBundle)
-    outputs.file(nestedMantleJar)
-
     doLast {
-        def jarFile = hephaestusBundle.singleFile
+        def bundle = configurations.detachedConfiguration(dependencies.create(hephaestusCoordinate))
+        def jarFile = bundle.singleFile
+
         if (jarFile == null || !jarFile.exists()) {
-            throw new GradleException("Hephaestus dependency was not resolved: ${hephaestusDependency}")
+            throw new GradleException("Hephaestus dependency was not resolved: ${hephaestusCoordinate}")
         }
 
-        def outputFile = nestedMantleJar.get().asFile
+        def outputFile = extractedMantleJar.get().asFile
         outputFile.parentFile.mkdirs()
 
         def zip = new java.util.zip.ZipFile(jarFile)
@@ -53,8 +50,8 @@ tasks.register('extractEmbeddedMantle') {
                 throw new GradleException('Hephaestus jar does not contain a Mantle jar under META-INF/jars/')
             }
 
-            outputFile.withOutputStream { out ->
-                zip.getInputStream(entry).transferTo(out)
+            outputFile.withOutputStream { os ->
+                zip.getInputStream(entry).transferTo(os)
             }
         } finally {
             zip.close()
@@ -64,7 +61,7 @@ tasks.register('extractEmbeddedMantle') {
 
 tasks.withType(JavaCompile).configureEach {
     dependsOn tasks.named('extractEmbeddedMantle')
-    classpath += files(nestedMantleJar)
+    classpath += files(extractedMantleJar)
     options.release = 17
 }
 
