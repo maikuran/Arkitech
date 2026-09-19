@@ -23,13 +23,7 @@ dependencies {
     /*
      * Minecraft 1.20.1
      *
-     * src/main/java は Mojang mappings の名前空間
-     * net.minecraft.core.*
-     * net.minecraft.world.entity.*
-     * net.minecraft.world.item.*
-     * net.minecraft.world.level.*
-     * などを使用しているため、
-     * Yarn ではなく Official Mojang mappings を使用する。
+     * ソースコードは Mojang mappings の名前空間を使用。
      */
     minecraft "com.mojang:minecraft:${minecraftVersion}"
     mappings loom.officialMojangMappings()
@@ -58,8 +52,7 @@ dependencies {
  * ============================================================
  *
  * HephaestusにはMantleが内蔵されているため、
- * Hephaestus JARからMantleを抽出してコンパイル時のみ
- * classpathへ追加する。
+ * Hephaestus JARからMantleを抽出する。
  */
 
 def mantleExtractDir = layout.buildDirectory.dir("embedded-mantle")
@@ -152,15 +145,13 @@ tasks.register("extractEmbeddedMantle") {
 
 /*
  * ============================================================
- * Mantle compileOnly dependency
+ * Embedded Mantle compileOnly
  * ============================================================
  *
- * Hephaestus自身にMantleが内蔵されているため、
- * Mantleを別modとして実行時に同梱しない。
+ * MantleはHephaestusに内蔵されているため、
+ * 実行時に別のMantle JARを同梱しない。
  *
- * compileOnlyにすることで、
- * Javaコンパイル時にはMantle APIを利用でき、
- * jarへの二重同梱を防ぐ。
+ * コンパイル時のみMantle APIを利用する。
  */
 
 def embeddedMantleJar = mantleExtractDir.map {
@@ -175,17 +166,32 @@ dependencies {
 }
 
 /*
- * compileJavaより先にMantleを抽出する。
+ * ============================================================
+ * Task dependencies
+ * ============================================================
+ *
+ * Mantle JARを実際に参照するタスクより先に
+ * 必ずextractEmbeddedMantleを実行する。
+ *
+ * 特にGradle 8.8では、remapSourcesJarが
+ * extractEmbeddedMantleの出力を暗黙的に使用すると
+ * validation errorになるため、明示的に依存させる。
  */
+
+def extractEmbeddedMantle = tasks.named("extractEmbeddedMantle")
+
 tasks.named("compileJava") {
-    dependsOn(tasks.named("extractEmbeddedMantle"))
+    dependsOn(extractEmbeddedMantle)
 
     /*
-     * 119件のような大量エラーが発生した場合でも
-     * 全エラーをログへ出す。
+     * コンパイルエラーを最大1000件まで表示する。
      */
     options.compilerArgs.add("-Xmaxerrs")
     options.compilerArgs.add("1000")
+}
+
+tasks.named("remapSourcesJar") {
+    dependsOn(extractEmbeddedMantle)
 }
 
 /*
