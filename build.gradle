@@ -1,9 +1,15 @@
 plugins {
-    id 'fabric-loom' version '1.6.11'
+    id 'fabric-loom' version '1.7.2'
 }
 
 version = '1.0.1-hephaestus'
 group = 'com.sakalti'
+
+def minecraftVersion = '1.20.1'
+def fabricLoaderVersion = '0.17.2'
+def fabricApiVersion = '0.92.6+1.20.1'
+def hephaestusCoordinate = 'curse.maven:hephaestus-fabric-667894:7223152'
+def extractedMantleJar = layout.buildDirectory.file('embedded-libs/Mantle-1.20.1-1.9.291.jar')
 
 repositories {
     maven { url = 'https://maven.fabricmc.net/' }
@@ -12,25 +18,21 @@ repositories {
     maven { url = 'https://www.cursemaven.com' }
     maven { url = 'https://api.modrinth.com/maven' }
     mavenCentral()
+    gradlePluginPortal()
 }
-
-def hephaestusCoordinate = 'curse.maven:hephaestus-fabric-667894:7223152'
-def extractedMantleJar = layout.buildDirectory.file('embedded-libs/Mantle-1.20.1-1.9.291.jar')
 
 configurations {
     hephaestusBundle
 }
 
 dependencies {
-    minecraft 'com.mojang:minecraft:1.20.1'
-    mappings loom.officialMojangMappings()
+    minecraft "com.mojang:minecraft:${minecraftVersion}"
+    mappings "net.fabricmc:yarn:${minecraftVersion}+build.10:v2"
 
-    modImplementation 'net.fabricmc:fabric-loader:0.17.2'
-    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.6+1.20.1'
+    modImplementation "net.fabricmc:fabric-loader:${fabricLoaderVersion}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}"
     modImplementation hephaestusCoordinate
 
-    // Hephaestus contains Mantle inside META-INF/jars. Make that nested jar
-    // available to javac as well as to the runtime.
     hephaestusBundle(dependencies.create(hephaestusCoordinate))
     compileOnly files(extractedMantleJar)
 
@@ -49,7 +51,7 @@ tasks.register('extractEmbeddedMantle') {
         }
 
         def jarFile = bundle.singleFile
-        if (!jarFile.exists()) {
+        if (jarFile == null || !jarFile.exists()) {
             throw new GradleException("Hephaestus dependency was not resolved: ${hephaestusCoordinate}")
         }
 
@@ -73,8 +75,11 @@ tasks.register('extractEmbeddedMantle') {
     }
 }
 
-tasks.withType(JavaCompile).configureEach {
+tasks.named('compileJava') {
     dependsOn tasks.named('extractEmbeddedMantle')
+}
+
+tasks.withType(JavaCompile).configureEach {
     classpath += files(extractedMantleJar)
     options.release = 17
 }
