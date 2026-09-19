@@ -10,14 +10,20 @@ import slimeknights.tconstruct.library.tools.nbt.IToolStackView;
 public class PoisonousBindModifier extends Modifier {
     @Override
     public int afterEntityHit(IToolStackView tool, int level, ToolAttackContext ctx, float damage) {
-        LivingEntity target = ctx.getLivingTarget();
-        if (target != null && !target.level().isClientSide) {
-            target.addEffect(new MobEffectInstance(
-                    MobEffects.POISON,
-                    100,
-                    Math.max(0, level - 1)
-            ));
+        if (level <= 0 || ctx == null) {
+            return 0;
         }
+
+        LivingEntity target = ctx.getLivingTarget();
+        if (target == null || !target.isAlive() || target.level().isClientSide) {
+            return 0;
+        }
+
+        target.addEffect(new MobEffectInstance(
+                MobEffects.POISON,
+                100,
+                level - 1
+        ));
         return 0;
     }
 }
