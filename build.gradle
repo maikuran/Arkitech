@@ -9,7 +9,6 @@ repositories {
     maven { url = 'https://maven.fabricmc.net/' }
     maven { url = 'https://api.modrinth.com/maven' }
     maven { url = 'https://maven.ladysnake.org/releases' }
-    maven { url = 'https://cursemaven.com' }
     mavenCentral()
 }
 
@@ -20,8 +19,10 @@ dependencies {
     modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.6+1.20.1'
     modImplementation 'maven.modrinth:sdSn3wvy:q5lAhdfq'
 
-    // Hephaestus' Fabric build exposes Mantle and Cardinal Components types at compile time.
-    modImplementation 'curse.maven:mantle-gg-930187:5358471'
+    // Hephaestus 1.20.1-3.6.4.305 depends on the Fabric Mantle library.
+    // Use the Mantle.gg Modrinth artifact; the similarly named Curse Maven
+    // artifact does not contain slimeknights.mantle.data.GenericLoaderRegistry.
+    modImplementation 'maven.modrinth:2GDTEPCm:EhNDUiZ0'
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.2'
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.2'
 }
