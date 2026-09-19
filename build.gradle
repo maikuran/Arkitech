@@ -59,11 +59,9 @@ tasks.register('extractEmbeddedMantle') {
             def entry = zip.entries().find {
                 it.name.startsWith('META-INF/jars/Mantle-') && it.name.endsWith('.jar')
             }
-
             if (entry == null) {
                 throw new GradleException('Hephaestus jar does not contain an embedded Mantle jar under META-INF/jars/')
             }
-
             outputFile.withOutputStream { out ->
                 zip.getInputStream(entry).transferTo(out)
             }
