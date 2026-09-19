@@ -2,14 +2,14 @@ package com.sakalti.worldgen;
 
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.levelgen.GenerationStep;
-import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.util.Identifier;
+import net.minecraft.world.gen.GenerationStep;
+import net.minecraft.world.gen.feature.PlacedFeature;
 
 public final class SakaltiWorldgen {
-  private static ResourceKey<PlacedFeature> key(String id) { return ResourceKey.create(Registries.PLACED_FEATURE, new ResourceLocation("sakalti",id)); }
+  private static RegistryKey<PlacedFeature> key(String id) { return RegistryKey.of(RegistryKeys.PLACED_FEATURE, new Identifier("sakalti",id)); }
   public static void init() {
     BiomeModifications.addFeature(BiomeSelectors.foundInTheNether(), GenerationStep.Decoration.UNDERGROUND_ORES, key("igniz_ore"));
     BiomeModifications.addFeature(BiomeSelectors.foundInTheNether(), GenerationStep.Decoration.UNDERGROUND_ORES, key("momongaite_ore"));

@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.sakalti.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "ModifierModelManagerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
