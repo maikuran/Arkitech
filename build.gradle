@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.9.2'
+    id 'fabric-loom' version '1.6.11'
 }
 
 version = '1.0.1-hephaestus'
@@ -8,7 +8,6 @@ group = 'com.sakalti'
 repositories {
     maven { url = 'https://maven.fabricmc.net/' }
     maven { url = 'https://libraries.minecraft.net/' }
-    maven { url = 'https://maven.minecraftforge.net/' }
     maven { url = 'https://maven.ladysnake.org/releases' }
     maven { url = 'https://www.cursemaven.com' }
     maven { url = 'https://api.modrinth.com/maven' }
@@ -18,6 +17,10 @@ repositories {
 def hephaestusCoordinate = 'curse.maven:hephaestus-fabric-667894:7223152'
 def extractedMantleJar = layout.buildDirectory.file('embedded-libs/Mantle-1.20.1-1.9.291.jar')
 
+configurations {
+    hephaestusBundle
+}
+
 dependencies {
     minecraft 'com.mojang:minecraft:1.20.1'
     mappings loom.officialMojangMappings()
@@ -25,6 +28,8 @@ dependencies {
     modImplementation 'net.fabricmc:fabric-loader:0.17.2'
     modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.6+1.20.1'
     modImplementation hephaestusCoordinate
+
+    hephaestusBundle(dependencies.create(hephaestusCoordinate))
     compileOnly files(extractedMantleJar)
 
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.2'
@@ -32,10 +37,16 @@ dependencies {
 }
 
 tasks.register('extractEmbeddedMantle') {
-    doLast {
-        def bundle = configurations.detachedConfiguration(dependencies.create(hephaestusCoordinate))
-        def jarFile = bundle.singleFile
+    inputs.files(configurations.hephaestusBundle)
+    outputs.file(extractedMantleJar)
 
+    doLast {
+        def bundle = configurations.hephaestusBundle
+        if (bundle.isEmpty()) {
+            throw new GradleException("Hephaestus dependency was not resolved: ${hephaestusCoordinate}")
+        }
+
+        def jarFile = bundle.singleFile
         if (jarFile == null || !jarFile.exists()) {
             throw new GradleException("Hephaestus dependency was not resolved: ${hephaestusCoordinate}")
         }
@@ -45,13 +56,16 @@ tasks.register('extractEmbeddedMantle') {
 
         def zip = new java.util.zip.ZipFile(jarFile)
         try {
-            def entry = zip.entries().find { it.name.startsWith('META-INF/jars/Mantle-') && it.name.endsWith('.jar') }
-            if (entry == null) {
-                throw new GradleException('Hephaestus jar does not contain a Mantle jar under META-INF/jars/')
+            def entry = zip.entries().find {
+                it.name.startsWith('META-INF/jars/Mantle-') && it.name.endsWith('.jar')
             }
 
-            outputFile.withOutputStream { os ->
-                zip.getInputStream(entry).transferTo(os)
+            if (entry == null) {
+                throw new GradleException('Hephaestus jar does not contain an embedded Mantle jar under META-INF/jars/')
+            }
+
+            outputFile.withOutputStream { out ->
+                zip.getInputStream(entry).transferTo(out)
             }
         } finally {
             zip.close()
@@ -70,6 +84,10 @@ processResources {
     filesMatching('fabric.mod.json') { expand 'version': project.version }
 }
 
-java { withSourcesJar() }
+java {
+    withSourcesJar()
+}
 
-loom { splitEnvironmentSourceSets() }
+loom {
+    splitEnvironmentSourceSets()
+}
