@@ -1,0 +1,210 @@
+name: Fix Mojmap Modifier Errors
+
+on:
+  push:
+    branches:
+      - unkobriri
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Fix only affected Mojmap files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 <<'PY'
+          from pathlib import Path
+
+          root = Path("src/main/java/com/sakalti/modifier")
+
+          targets = {
+              "CoralianModifier.java",
+              "IceBindModifier.java",
+              "SuperMagnetModifier.java",
+              "LongsparkModifier.java",
+              "LureMeteorModifier.java",
+              "FireWallModifier.java",
+              "LaserPrismModifier.java",
+          }
+
+          files = {root / name for name in targets}
+
+          for path in files:
+              if not path.is_file():
+                  raise SystemExit(f"Missing expected file: {path}")
+
+          # Coralian: missing MobEffectInstance import.
+          path = root / "CoralianModifier.java"
+          text = path.read_text(encoding="utf-8")
+
+          if "import net.minecraft.world.effect.MobEffectInstance;" not in text:
+              marker = "import net.minecraft.world.effect.MobEffects;"
+              if marker not in text:
+                  raise SystemExit(
+                      f"Expected MobEffects import was not found in {path}"
+                  )
+
+              text = text.replace(
+                  marker,
+                  "import net.minecraft.world.effect.MobEffectInstance;\n"
+                  + marker,
+                  1,
+              )
+
+          path.write_text(text, encoding="utf-8")
+
+          # Mojang mappings 1.20.1:
+          # Entity.damageSources(), not getDamageSources().
+          for path in files:
+              text = path.read_text(encoding="utf-8")
+              text = text.replace(
+                  ".getDamageSources()",
+                  ".damageSources()",
+              )
+              path.write_text(text, encoding="utf-8")
+
+          # Mojang mappings 1.20.1:
+          # ItemEntity exposes hasPickUpDelay(), not getPickupDelay().
+          path = root / "SuperMagnetModifier.java"
+          text = path.read_text(encoding="utf-8")
+
+          old = "x->x.getPickupDelay() <= 0"
+          new = "!x.hasPickUpDelay()"
+
+          if old not in text:
+              if new not in text:
+                  raise SystemExit(
+                      "Expected SuperMagnet pickup-delay expression was not found."
+                  )
+          else:
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding="utf-8")
+
+          # Verify that the old erroneous APIs are completely absent
+          # from the seven files being repaired.
+          for path in files:
+              text = path.read_text(encoding="utf-8")
+
+              if ".getDamageSources()" in text:
+                  raise SystemExit(
+                      f"Old getDamageSources() remains in {path}"
+                  )
+
+              if "getPickupDelay()" in text:
+                  raise SystemExit(
+                      f"Old getPickupDelay() remains in {path}"
+                  )
+
+          coralian = (root / "CoralianModifier.java").read_text(
+              encoding="utf-8"
+          )
+
+          if "MobEffectInstance" not in coralian:
+              raise SystemExit(
+                  "CoralianModifier still does not contain MobEffectInstance."
+              )
+
+          print("Mojmap fixes applied successfully.")
+          PY
+
+      - name: Verify only the requested files changed
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          allowed="
+          src/main/java/com/sakalti/modifier/CoralianModifier.java
+          src/main/java/com/sakalti/modifier/IceBindModifier.java
+          src/main/java/com/sakalti/modifier/SuperMagnetModifier.java
+          src/main/java/com/sakalti/modifier/LongsparkModifier.java
+          src/main/java/com/sakalti/modifier/LureMeteorModifier.java
+          src/main/java/com/sakalti/modifier/FireWallModifier.java
+          src/main/java/com/sakalti/modifier/LaserPrismModifier.java
+          "
+
+          git diff --name-only | while IFS= read -r file; do
+            if ! printf '%s\n' "$allowed" | grep -Fxq "$file"; then
+              echo "Unexpected modified file: $file"
+              exit 1
+            fi
+          done
+
+      - name: Compile with Mojang mappings
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew --no-daemon clean compileJava
+
+      - name: Final source verification
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if grep -RIn --include='*.java' \
+            '\.getDamageSources()' \
+            src/main/java/com/sakalti/modifier/; then
+            echo "ERROR: getDamageSources() still exists."
+            exit 1
+          fi
+
+          if grep -RIn --include='*.java' \
+            'getPickupDelay()' \
+            src/main/java/com/sakalti/modifier/; then
+            echo "ERROR: getPickupDelay() still exists."
+            exit 1
+          fi
+
+          grep -Fq \
+            'import net.minecraft.world.effect.MobEffectInstance;' \
+            src/main/java/com/sakalti/modifier/CoralianModifier.java
+
+          echo "Final verification passed."
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            src/main/java/com/sakalti/modifier/CoralianModifier.java \
+            src/main/java/com/sakalti/modifier/IceBindModifier.java \
+            src/main/java/com/sakalti/modifier/SuperMagnetModifier.java \
+            src/main/java/com/sakalti/modifier/LongsparkModifier.java \
+            src/main/java/com/sakalti/modifier/LureMeteorModifier.java \
+            src/main/java/com/sakalti/modifier/FireWallModifier.java \
+            src/main/java/com/sakalti/modifier/LaserPrismModifier.java
+
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Fix Mojmap modifier API mappings"
+          git push origin HEAD:unkobriri
