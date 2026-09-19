@@ -11,7 +11,6 @@ def fabricApiVersion = '0.92.6+1.20.1'
 def hephaestusProjectId = '667894'
 def hephaestusFileId = '7223152'
 def hephaestusCoordinate = "curse.maven:hephaestus-fabric-${hephaestusProjectId}:${hephaestusFileId}"
-def extractedMantleJar = layout.buildDirectory.file('embedded-libs/Mantle-1.20.1-1.9.291.jar')
 
 repositories {
     maven { url = 'https://maven.fabricmc.net/' }
@@ -23,10 +22,6 @@ repositories {
     gradlePluginPortal()
 }
 
-configurations {
-    hephaestusBundle
-}
-
 dependencies {
     minecraft "com.mojang:minecraft:${minecraftVersion}"
     mappings "net.fabricmc:yarn:${minecraftVersion}+build.10:v2"
@@ -35,55 +30,8 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}"
     modImplementation hephaestusCoordinate
 
-    hephaestusBundle(dependencies.create(hephaestusCoordinate))
-    compileOnly files(extractedMantleJar)
-
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.2'
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.2'
-}
-
-tasks.register('extractEmbeddedMantle') {
-    inputs.files(configurations.hephaestusBundle)
-    outputs.file(extractedMantleJar)
-
-    doLast {
-        def bundle = configurations.hephaestusBundle
-        if (bundle.isEmpty()) {
-            throw new GradleException("Hephaestus dependency was not resolved: ${hephaestusCoordinate}")
-        }
-
-        def jarFile = bundle.singleFile
-        if (jarFile == null || !jarFile.exists()) {
-            throw new GradleException("Hephaestus dependency was not resolved: ${hephaestusCoordinate}")
-        }
-
-        def outputFile = extractedMantleJar.get().asFile
-        outputFile.parentFile.mkdirs()
-
-        def zip = new java.util.zip.ZipFile(jarFile)
-        try {
-            def entry = zip.entries().find {
-                it.name.startsWith('META-INF/jars/Mantle-') && it.name.endsWith('.jar')
-            }
-            if (entry == null) {
-                throw new GradleException('Hephaestus jar does not contain an embedded Mantle jar under META-INF/jars/')
-            }
-            outputFile.withOutputStream { out ->
-                zip.getInputStream(entry).transferTo(out)
-            }
-        } finally {
-            zip.close()
-        }
-    }
-}
-
-tasks.named('compileJava') {
-    dependsOn tasks.named('extractEmbeddedMantle')
-}
-
-tasks.withType(JavaCompile).configureEach {
-    classpath += files(extractedMantleJar)
-    options.release = 17
 }
 
 processResources {
