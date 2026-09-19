@@ -16,7 +16,7 @@ public abstract class ModifierModelManagerMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private static void sakalti$waitForRenderer(
+    private void sakalti$waitForRenderer(
             ResourceManager resourceManager,
             CallbackInfo ci
     ) {
