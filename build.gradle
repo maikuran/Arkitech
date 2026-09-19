@@ -20,58 +20,115 @@ repositories {
 }
 
 dependencies {
+    /*
+     * Minecraft 1.20.1
+     *
+     * src/main/java は Mojang mappings の名前空間
+     * net.minecraft.core.*
+     * net.minecraft.world.entity.*
+     * net.minecraft.world.item.*
+     * net.minecraft.world.level.*
+     * などを使用しているため、
+     * Yarn ではなく Official Mojang mappings を使用する。
+     */
     minecraft "com.mojang:minecraft:${minecraftVersion}"
-    mappings "net.fabricmc:yarn:${minecraftVersion}+build.10:v2"
+    mappings loom.officialMojangMappings()
 
+    /*
+     * Fabric
+     */
     modImplementation "net.fabricmc:fabric-loader:${fabricLoaderVersion}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}"
 
+    /*
+     * Hephaestus
+     */
     modImplementation "curse.maven:hephaestus-fabric-667894:7223152"
 
+    /*
+     * Cardinal Components API
+     */
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.2'
     modImplementation 'dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.2'
 }
 
 /*
- * Hephaestusに内蔵されているMantleを抽出する
+ * ============================================================
+ * Embedded Mantle extraction
+ * ============================================================
+ *
+ * HephaestusにはMantleが内蔵されているため、
+ * Hephaestus JARからMantleを抽出してコンパイル時のみ
+ * classpathへ追加する。
  */
+
 def mantleExtractDir = layout.buildDirectory.dir("embedded-mantle")
 
 tasks.register("extractEmbeddedMantle") {
     outputs.dir(mantleExtractDir)
 
     doLast {
-        def hephaestusArtifact = configurations.modImplementation.resolvedConfiguration.resolvedArtifacts.find {
-            it.moduleVersion.id.name.toLowerCase().contains("hephaestus")
-        }
+        def hephaestusArtifact =
+                configurations.modImplementation.resolvedConfiguration.resolvedArtifacts.find {
+                    it.moduleVersion.id.name.toLowerCase().contains("hephaestus")
+                }
 
         if (hephaestusArtifact == null) {
             throw new GradleException(
-                "Hephaestus JAR could not be found."
+                    "Hephaestus JAR could not be found in modImplementation."
             )
         }
 
         def hephaestusJar = hephaestusArtifact.file
 
-        def mantleEntry = new java.util.zip.ZipFile(hephaestusJar).entries().find {
-            it.name ==~ /META-INF\/jars\/Mantle-.*\.jar/
+        println "Hephaestus JAR:"
+        println "  ${hephaestusJar}"
+
+        def mantleEntryName = null
+
+        def hephaestusZip = new java.util.zip.ZipFile(hephaestusJar)
+
+        try {
+            def entries = hephaestusZip.entries()
+
+            while (entries.hasMoreElements()) {
+                def entry = entries.nextElement()
+
+                if (!entry.isDirectory() &&
+                        entry.name ==~ /META-INF\/jars\/Mantle-.*\.jar/) {
+                    mantleEntryName = entry.name
+                    break
+                }
+            }
+        } finally {
+            hephaestusZip.close()
         }
 
-        if (mantleEntry == null) {
+        if (mantleEntryName == null) {
             throw new GradleException(
-                "Embedded Mantle JAR was not found inside ${hephaestusJar.name}"
+                    "Embedded Mantle JAR was not found inside ${hephaestusJar.name}"
             )
         }
 
         def outputDir = mantleExtractDir.get().asFile
-        outputDir.mkdirs()
 
-        def mantleFile = new File(outputDir, "Mantle-1.20.1-1.9.291.jar")
+        if (!outputDir.exists()) {
+            outputDir.mkdirs()
+        }
+
+        def mantleFile =
+                new File(outputDir, "Mantle-1.20.1-1.9.291.jar")
 
         def zip = new java.util.zip.ZipFile(hephaestusJar)
 
         try {
-            def entry = zip.getEntry(mantleEntry.name)
+            def entry = zip.getEntry(mantleEntryName)
+
+            if (entry == null) {
+                throw new GradleException(
+                        "Mantle entry disappeared from ${hephaestusJar.name}: ${mantleEntryName}"
+                )
+            }
 
             zip.getInputStream(entry).withCloseable { input ->
                 mantleFile.withOutputStream { output ->
@@ -82,28 +139,60 @@ tasks.register("extractEmbeddedMantle") {
             zip.close()
         }
 
+        if (!mantleFile.isFile() || mantleFile.length() == 0) {
+            throw new GradleException(
+                    "Mantle extraction failed: ${mantleFile}"
+            )
+        }
+
         println "Embedded Mantle extracted:"
         println "  ${mantleFile}"
     }
 }
 
 /*
- * 抽出したMantleをコンパイル時classpathに追加
+ * ============================================================
+ * Mantle compileOnly dependency
+ * ============================================================
  *
- * 実行時にはHephaestus内蔵Mantleを使用するため、
- * compileOnlyにして二重同梱を防ぐ。
+ * Hephaestus自身にMantleが内蔵されているため、
+ * Mantleを別modとして実行時に同梱しない。
+ *
+ * compileOnlyにすることで、
+ * Javaコンパイル時にはMantle APIを利用でき、
+ * jarへの二重同梱を防ぐ。
  */
+
 def embeddedMantleJar = mantleExtractDir.map {
-    new File(it.asFile, "Mantle-1.20.1-1.9.291.jar")
+    new File(
+            it.asFile,
+            "Mantle-1.20.1-1.9.291.jar"
+    )
 }
 
 dependencies {
     compileOnly files(embeddedMantleJar)
 }
 
+/*
+ * compileJavaより先にMantleを抽出する。
+ */
 tasks.named("compileJava") {
     dependsOn(tasks.named("extractEmbeddedMantle"))
+
+    /*
+     * 119件のような大量エラーが発生した場合でも
+     * 全エラーをログへ出す。
+     */
+    options.compilerArgs.add("-Xmaxerrs")
+    options.compilerArgs.add("1000")
 }
+
+/*
+ * ============================================================
+ * Resources
+ * ============================================================
+ */
 
 processResources {
     inputs.property 'version', project.version
@@ -113,9 +202,21 @@ processResources {
     }
 }
 
+/*
+ * ============================================================
+ * Java
+ * ============================================================
+ */
+
 java {
     withSourcesJar()
 }
+
+/*
+ * ============================================================
+ * Loom
+ * ============================================================
+ */
 
 loom {
     splitEnvironmentSourceSets()
