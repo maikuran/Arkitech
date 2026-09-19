@@ -1,13 +1,13 @@
 package com.sakalti;
 
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.AbstractBlock;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -26,13 +26,13 @@ public final class SakaltiContent {
   public static void init() {
     for(String id: BLOCK_NAMES) {
       Block base = id.endsWith("_ore") ? Blocks.IRON_ORE : Blocks.IRON_BLOCK;
-      Block b = new Block(AbstractBlock.Settings.copy(base));
-      Registry.register(Registries.BLOCK, new Identifier(SakaltiFabric.MOD_ID,id), b);
-      Registry.register(Registries.ITEM, new Identifier(SakaltiFabric.MOD_ID,id), new BlockItem(b,new Item.Settings()));
+      Block b = new Block(BlockBehaviour.Properties.copy(base));
+      Registry.register(BuiltInRegistries.BLOCK, new ResourceLocation(SakaltiFabric.MOD_ID,id), b);
+      Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(SakaltiFabric.MOD_ID,id), new BlockItem(b,new Item.Properties()));
     }
     for(String id: ITEM_NAMES) {
-      if(!Registries.ITEM.containsId(new Identifier(SakaltiFabric.MOD_ID,id)))
-        Registry.register(Registries.ITEM,new Identifier(SakaltiFabric.MOD_ID,id),new Item(new Item.Settings()));
+      if(!BuiltInRegistries.ITEM.containsKey(new ResourceLocation(SakaltiFabric.MOD_ID,id)))
+        Registry.register(BuiltInRegistries.ITEM,new ResourceLocation(SakaltiFabric.MOD_ID,id),new Item(new Item.Properties()));
     }
   }
   private SakaltiContent() {}
