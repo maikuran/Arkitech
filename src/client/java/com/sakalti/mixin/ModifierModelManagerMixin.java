@@ -1,7 +1,7 @@
 package com.sakalti.mixin;
 
 import net.fabricmc.fabric.api.renderer.v1.RendererAccess;
-import net.minecraft.client.resources.model.ResourceManager;
+import net.minecraft.server.packs.resources.ResourceManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,7 +16,7 @@ public abstract class ModifierModelManagerMixin {
             at = @At("HEAD"),
             cancellable = true
     )
-    private void sakalti$waitForRenderer(
+    private static void sakalti$waitForRenderer(
             ResourceManager resourceManager,
             CallbackInfo ci
     ) {
