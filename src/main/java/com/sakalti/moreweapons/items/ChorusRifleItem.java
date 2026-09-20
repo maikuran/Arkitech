@@ -27,8 +27,8 @@ public class ChorusRifleItem extends Item {
     private static final int COOLDOWN_TICKS = 23;
     private static final int MAX_AMMO = 2;
 
-    private static final double BASE_DAMAGE = 6.0;
-    private static final int PIERCING_LEVEL = 2;
+    private static final double BASE_DAMAGE = 15.5;
+    private static final int PIERCING_LEVEL = 3;
 
     public ChorusRifleItem(Settings settings) {
         super(settings);
