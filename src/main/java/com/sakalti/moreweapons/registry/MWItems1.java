@@ -39,6 +39,7 @@ public class MWItems1 {
             new ItemRegisterInfo("kabnnorde", new KabnnordeItem(new Item.Settings().fireproof().group(COMBAT))),
             new ItemRegisterInfo("wool_sword", new WoolSwordItem(new Item.Settings().group(COMBAT))),
             new ItemRegisterInfo("diorite_sword", new DioriteSwordItem(new Item.Settings().group(COMBAT))),
+            new ItemRegisterInfo("chorus_rifle", new ChorusRifleItem(new Item.Settings().group(COMBAT))),
             new ItemRegisterInfo("andesite_sword", new AndesiteSwordItem(new Item.Settings().group(COMBAT))),
             new ItemRegisterInfo("granite_sword", new GraniteSwordItem(new Item.Settings().group(COMBAT))),
             new ItemRegisterInfo("bed_sword", new BedSwordItem(new Item.Settings().group(COMBAT))),
